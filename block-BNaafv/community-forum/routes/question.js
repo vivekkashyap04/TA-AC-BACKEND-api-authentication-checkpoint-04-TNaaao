@@ -3,6 +3,7 @@ var router = express.Router();
 var User = require('../models/user');
 var Question = require('../models/questions');
 var Answer = require('../models/answer');
+var Comment = require('../models/comment');
 var auth = require('../middleware/auth');
 
 router.post('/', auth.verifyToken, async (req, res, next) => {
@@ -89,6 +90,20 @@ router.get('/:questionId/answers', async (req, res, next) => {
   try {
     let answer = await Question.find({ questionId });
     return res.json({ answer });
+  } catch (error) {
+    next(error);
+  }
+});
+
+//comment
+
+router.post('/questionId/comment', async (req, res, next) => {
+  let questionId = req.params.questionId;
+  req.body.author = req.user.id;
+  req.body.questionId = questionId;
+  try {
+    var comment = await Comment.create(req.body);
+    res.json({ comment });
   } catch (error) {
     next(error);
   }

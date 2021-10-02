@@ -3,6 +3,7 @@ var router = express.Router();
 var User = require('../models/user');
 var Question = require('../models/questions');
 var Answer = require('../models/answer');
+var Comment = require('../models/comment');
 var auth = require('../middleware/auth');
 
 router.get('/:answerId', async (req, res, next) => {
@@ -41,6 +42,20 @@ router.put('/:answerId', async (req, res, next) => {
     } else {
       res.json({ error: 'the answer do not belong to you' });
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+//comment
+
+router.post('/answerId/comment', async (req, res, next) => {
+  let answerId = req.params.answerId;
+  req.body.author = req.user.id;
+  req.body.answerId = answerId;
+  try {
+    var comment = await Comment.create(req.body);
+    res.json({ comment });
   } catch (error) {
     next(error);
   }

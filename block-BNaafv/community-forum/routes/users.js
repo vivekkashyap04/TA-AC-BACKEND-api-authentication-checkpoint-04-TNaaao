@@ -49,6 +49,9 @@ router.post('/login', async (req, res, next) => {
     if (!result) {
       return res.status(400).json({ error: 'Incorrect password' });
     }
+    if (user.isBlocked === false) {
+      res.status(400).json({ error: 'Please contact admin' });
+    }
 
     let token = await user.signToken();
     user = await user.jsonData(token);
@@ -95,6 +98,76 @@ router.put('/profile/:username', auth.verifyToken, async (req, res, next) => {
   try {
     var user = await User.findOneAndUpdate({ username }, req.body);
     res.json({ user: user.profileData() });
+  } catch (error) {
+    next(error);
+  }
+});
+
+//follow
+router.get('/follow/:id', async (req, res, next) => {
+  var randomUser = req.params.id;
+  var userId = req.user.id;
+  try {
+    if (randomUser === userId) {
+      res.json({ error: 'you cannot follow yourself' });
+    } else {
+      let follower = await User.findByIdAndUpdate(randomUser, {
+        $push: { followers: userId },
+      });
+      let following = await User.findByIdAndUpdate(userId, {
+        $push: { following: randomUser },
+      });
+      res.json({ follower, following });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+//unfollow
+router.get('/unfollow/:id', async (req, res, next) => {
+  var randomUser = req.params.id;
+  var userId = req.user.id;
+  try {
+    if (randomUser === userId) {
+      res.json({ error: 'you cannot follow yourself' });
+    } else {
+      let follower = await User.findByIdAndUpdate(randomUser, {
+        $pull: { followers: userId },
+      });
+      let following = await User.findByIdAndUpdate(userId, {
+        $pull: { following: randomUser },
+      });
+      res.json({ follower, following });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+//block
+
+router.get('/block/:username', async (req, res, next) => {
+  let username = req.params.username;
+  try {
+    let blockUser = await User.findOneAndUpdate(
+      { username },
+      { isBlocked: false }
+    );
+    res.json({ blockUser });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/unblock/:username', async (req, res, next) => {
+  let username = req.params.username;
+  try {
+    let unblockUser = await User.findOneAndUpdate(
+      { username },
+      { isBlocked: true }
+    );
+    res.json({ unblockUser });
   } catch (error) {
     next(error);
   }
